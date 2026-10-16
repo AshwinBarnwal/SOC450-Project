@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A local proof-of-concept life-course inequality simulation."
+    />
+    <title>Compounding Advantage</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">SOC 450 / LIFE-COURSE SIMULATION</p>
+        <h1>Compounding Advantage</h1>
+      </div>
+      <button id="reset-button" class="text-button" type="button" hidden>Start over</button>
+    </header>
+
+    <main id="app" class="shell">
+      <section id="start-screen" class="start-screen" aria-labelledby="start-title">
+        <div class="start-copy">
+          <p class="section-number">PROTOTYPE 01</p>
+          <h2 id="start-title">Five decades. Unequal beginnings. Compounding lives.</h2>
+          <p>
+            You and a small cohort enter adulthood with different economic, health,
+            social, and emotional resources. Decisions, recurring obligations,
+            historical shocks, and chance pull those lives further apart.
+          </p>
+          <p class="fine-print">
+            Play alone against simulated participants or pass the laptop around a local group.
+            Probabilities and decision outcomes are intentionally undisclosed.
+          </p>
+        </div>
+
+        <form id="start-form" class="registration-panel">
+          <label for="game-mode">Play mode</label>
+          <select id="game-mode" name="gameMode">
+            <option value="bots" selected>One player with bots</option>
+            <option value="multiplayer">Local multiplayer</option>
+          </select>
+
+          <div id="single-player-fields" class="form-group">
+            <label for="player-name">Your name</label>
+            <input id="player-name" name="playerName" maxlength="24" value="Player" />
+          </div>
+
+          <div id="multiplayer-fields" class="form-group" hidden>
+            <label for="player-names">Player names</label>
+            <input id="player-names" name="playerNames" maxlength="149" value="Asha, Dev, Inez, Jonah" />
+            <p class="field-note">Separate names with commas. Missing names will be filled automatically.</p>
+          </div>
+
+          <label for="cohort-size">Cohort size</label>
+          <select id="cohort-size" name="cohortSize">
+            <option value="3">3 participants</option>
+            <option value="4" selected>4 participants</option>
+            <option value="5">5 participants</option>
+            <option value="6">6 participants</option>
+          </select>
+
+          <button class="primary-button" type="submit">Enter the simulation</button>
+        </form>
+      </section>
+
+      <section id="game-screen" hidden>
+        <nav class="decade-track" aria-label="Life-course progress">
+          <ol id="round-track"></ol>
+        </nav>
+
+        <div class="game-layout">
+          <aside class="player-column" aria-labelledby="your-position-title">
+            <div class="column-heading">
+              <p id="position-kicker" class="section-number">YOUR POSITION</p>
+              <h2 id="your-position-title">Capital and wellbeing</h2>
+            </div>
+            <div id="human-stats" class="metric-list"></div>
+
+            <div class="trait-block">
+              <h3>Persistent conditions</h3>
+              <div id="human-traits" class="tag-list"></div>
+            </div>
+          </aside>
+
+          <section class="decision-column" aria-live="polite">
+            <div class="round-heading">
+              <p id="round-kicker" class="section-number"></p>
+              <h2 id="event-title"></h2>
+              <p id="event-description" class="event-description"></p>
+              <div id="shock-note" class="shock-note" hidden></div>
+            </div>
+
+            <div id="choice-area" class="choice-area"></div>
+            <div id="resolution-area" class="resolution-area" hidden></div>
+          </section>
+
+          <aside class="cohort-column" aria-labelledby="cohort-title">
+            <div class="column-heading">
+              <p class="section-number">CURRENT LOBBY</p>
+              <h2 id="cohort-title">Cohort</h2>
+            </div>
+            <div id="cohort-list" class="cohort-list"></div>
+          </aside>
+        </div>
+
+        <section class="record-section" aria-labelledby="record-title">
+          <div class="column-heading">
+            <p class="section-number">PUBLIC RECORD</p>
+            <h2 id="record-title">What has happened</h2>
+          </div>
+          <ol id="event-log" class="event-log"></ol>
+        </section>
+      </section>
+
+      <section id="final-screen" class="final-screen" hidden aria-labelledby="final-title">
+        <div class="final-heading">
+          <p class="section-number">FINAL EVALUATION</p>
+          <h2 id="final-title">The cohort at 60+</h2>
+          <p id="final-summary"></p>
+        </div>
+
+        <section class="life-summaries" aria-labelledby="life-summaries-title">
+          <p class="section-number">LIFE-COURSE INTERPRETATIONS</p>
+          <h2 id="life-summaries-title">How each life arrived here</h2>
+          <div id="final-narratives" class="final-narratives"></div>
+        </section>
+
+        <div id="closing-note" class="closing-note"></div>
+
+        <details class="final-detail">
+          <summary>Compare trajectories and final scores</summary>
+          <div id="trajectory-chart" class="trajectory-chart" aria-label="Capital trajectories"></div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Participant</th>
+                  <th>Household</th>
+                  <th>Economic</th>
+                  <th>Health</th>
+                  <th>Social</th>
+                  <th>Wellbeing</th>
+                  <th>Total</th>
+                  <th>Fallbacks</th>
+                  <th>Ageing classification</th>
+                </tr>
+              </thead>
+              <tbody id="final-table"></tbody>
+            </table>
+          </div>
+        </details>
+
+        <details class="final-detail archive-detail">
+          <summary>Open the complete cohort archive</summary>
+          <section class="journey-section" aria-labelledby="journey-title">
+            <div class="journey-heading">
+              <div>
+                <p class="section-number">COHORT ARCHIVE</p>
+                <h2 id="journey-title">Life journeys</h2>
+              </div>
+              <button id="copy-journeys-button" class="text-button" type="button">Copy cohort record</button>
+            </div>
+            <p id="copy-status" class="copy-status" aria-live="polite"></p>
+            <div id="journey-records" class="journey-records"></div>
+          </section>
+        </details>
+
+        <button id="replay-button" class="primary-button" type="button">Run another cohort</button>
+      </section>
+    </main>
+
+    <footer>
+      <span>Local classroom prototype</span>
+      <span>Based on the supplied life-course inequality rules</span>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
