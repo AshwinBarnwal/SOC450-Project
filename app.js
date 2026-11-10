@@ -51,6 +51,14 @@ const BACKGROUNDS = [
   },
 ];
 
+const AVERAGE_BACKGROUND = {
+  id: "average-start",
+  label: "Average starting position",
+  description: "Economic, health, social, and wellbeing resources begin at the cohort baseline.",
+  delta: {},
+  selectionType: "average",
+};
+
 const TRAIT_LABELS = {
   careerSecurity: "Career security",
   healthCover: "Health cover",
@@ -899,12 +907,30 @@ const RANDOM_EVENTS = [
 
 const els = {
   startScreen: document.querySelector("#start-screen"),
+  profileScreen: document.querySelector("#profile-screen"),
   gameScreen: document.querySelector("#game-screen"),
   finalScreen: document.querySelector("#final-screen"),
   startForm: document.querySelector("#start-form"),
   gameMode: document.querySelector("#game-mode"),
   singlePlayerFields: document.querySelector("#single-player-fields"),
   multiplayerFields: document.querySelector("#multiplayer-fields"),
+  profileForm: document.querySelector("#profile-form"),
+  profilePlayerName: document.querySelector("#profile-player-name"),
+  profileProgress: document.querySelector("#profile-progress"),
+  profileBuilder: document.querySelector("#profile-builder"),
+  profileBackButton: document.querySelector("#profile-back-button"),
+  profileSubmitButton: document.querySelector("#profile-submit-button"),
+  randomStart: document.querySelector('input[name="startType"][value="random"]'),
+  averageStart: document.querySelector('input[name="startType"][value="average"]'),
+  customStart: document.querySelector('input[name="startType"][value="profile"]'),
+  profileEconomic: document.querySelector("#profile-economic"),
+  profileHealth: document.querySelector("#profile-health"),
+  profileSocial: document.querySelector("#profile-social"),
+  profileWellbeing: document.querySelector("#profile-wellbeing"),
+  profileEconomicValue: document.querySelector("#profile-economic-value"),
+  profileHealthValue: document.querySelector("#profile-health-value"),
+  profileSocialValue: document.querySelector("#profile-social-value"),
+  profileWellbeingValue: document.querySelector("#profile-wellbeing-value"),
   resetButton: document.querySelector("#reset-button"),
   replayButton: document.querySelector("#replay-button"),
   copyJourneysButton: document.querySelector("#copy-journeys-button"),
@@ -930,6 +956,7 @@ const els = {
 };
 
 let state = null;
+let pendingSetup = null;
 
 function shuffled(values) {
   const result = [...values];
@@ -989,7 +1016,7 @@ function makePlayer(name, isHuman, index, background) {
   return player;
 }
 
-function startGame(nameOrNames, cohortSize, mode = "bots") {
+function startGame(nameOrNames, cohortSize, mode = "bots", humanBackgrounds = []) {
   const backgroundDeck = shuffled(BACKGROUNDS);
   const suppliedNames = Array.isArray(nameOrNames) ? nameOrNames : [String(nameOrNames || "Player")];
   const players = [];
@@ -997,8 +1024,13 @@ function startGame(nameOrNames, cohortSize, mode = "bots") {
     const controlled = mode === "multiplayer" || index === 0;
     const fallbackName = mode === "multiplayer" ? `Player ${index + 1}` : BOT_NAMES[Math.max(0, index - 1)];
     const name = controlled ? String(suppliedNames[index] || fallbackName).trim() || fallbackName : fallbackName;
-    players.push(makePlayer(name, controlled, index, backgroundDeck[index]));
+    const selectedBackground = controlled ? humanBackgrounds[index] : null;
+    players.push(makePlayer(name, controlled, index, selectedBackground || backgroundDeck[index]));
   }
+
+  const selectedStartCount = players.filter((player) =>
+    ["average", "profile"].includes(player.background.selectionType)
+  ).length;
 
   state = {
     mode,
@@ -1012,7 +1044,9 @@ function startGame(nameOrNames, cohortSize, mode = "bots") {
     log: [
       {
         period: "Birth",
-        text: `The cohort enters adulthood from ${cohortSize} different household positions. No participant chose their starting conditions.`,
+        text: selectedStartCount
+          ? `${selectedStartCount} participant${selectedStartCount === 1 ? "" : "s"} selected a starting position. All other beginnings were assigned by chance.`
+          : `The cohort enters adulthood from ${cohortSize} different household positions. No participant chose their starting conditions.`,
       },
     ],
     shockMessage: "",
@@ -1022,10 +1056,89 @@ function startGame(nameOrNames, cohortSize, mode = "bots") {
   };
 
   els.startScreen.hidden = true;
+  els.profileScreen.hidden = true;
   els.finalScreen.hidden = true;
   els.gameScreen.hidden = false;
   els.resetButton.hidden = false;
   startRound();
+}
+
+function numberWithin(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, Math.round(Number(value))));
+}
+
+function makeProfiledBackground(formData) {
+  const values = {
+    ec: numberWithin(formData.get("profileEconomic"), 4, 16),
+    hc: numberWithin(formData.get("profileHealth"), 4, 16),
+    sc: numberWithin(formData.get("profileSocial"), 4, 16),
+    wb: numberWithin(formData.get("profileWellbeing"), 4, 16),
+  };
+  return {
+    id: "profiled-start",
+    label: "Self-profiled starting position",
+    description: `You described your entry into adulthood as economic ${values.ec}, health ${values.hc}, social ${values.sc}, and wellbeing ${values.wb}.`,
+    delta: Object.fromEntries(METRICS.map((metric) => [metric, values[metric] - 10])),
+    values,
+    selectionType: "profile",
+  };
+}
+
+function selectedStartingBackground(formData) {
+  const startType = String(formData.get("startType") || "random");
+  if (startType === "average") return { ...AVERAGE_BACKGROUND };
+  if (startType === "profile") return makeProfiledBackground(formData);
+  return {
+    ...BACKGROUNDS[Math.floor(Math.random() * BACKGROUNDS.length)],
+    selectionType: "random",
+  };
+}
+
+function setProfileMeter(input, output, value = 10) {
+  input.value = String(value);
+  output.textContent = String(value);
+}
+
+function renderProfileStep() {
+  const index = pendingSetup.currentIndex;
+  const playerName = pendingSetup.names[index];
+  const previous = pendingSetup.humanBackgrounds[index];
+  els.profilePlayerName.textContent = pendingSetup.mode === "multiplayer" ? `${playerName}'s life` : "your life";
+  els.profileProgress.textContent = pendingSetup.mode === "multiplayer"
+    ? `Player ${index + 1} of ${pendingSetup.names.length}`
+    : "Your starting profile";
+  els.profileSubmitButton.textContent = index < pendingSetup.names.length - 1
+    ? "Save and pass to next player"
+    : "Begin the simulation";
+
+  const startType = previous?.selectionType || "random";
+  els.randomStart.checked = startType === "random";
+  els.averageStart.checked = startType === "average";
+  els.customStart.checked = startType === "profile";
+  els.profileBuilder.hidden = startType !== "profile";
+  setProfileMeter(els.profileEconomic, els.profileEconomicValue, previous?.values?.ec || 10);
+  setProfileMeter(els.profileHealth, els.profileHealthValue, previous?.values?.hc || 10);
+  setProfileMeter(els.profileSocial, els.profileSocialValue, previous?.values?.sc || 10);
+  setProfileMeter(els.profileWellbeing, els.profileWellbeingValue, previous?.values?.wb || 10);
+}
+
+function openProfileSetup(names, cohortSize, mode) {
+  const controlledCount = mode === "multiplayer" ? cohortSize : 1;
+  const completeNames = Array.from({ length: controlledCount }, (_, index) =>
+    String(names[index] || (mode === "multiplayer" ? `Player ${index + 1}` : "Player")).trim() || `Player ${index + 1}`
+  );
+  pendingSetup = {
+    names: completeNames,
+    cohortSize,
+    mode,
+    currentIndex: 0,
+    humanBackgrounds: [],
+  };
+  els.startScreen.hidden = true;
+  els.profileScreen.hidden = false;
+  els.gameScreen.hidden = true;
+  els.finalScreen.hidden = true;
+  renderProfileStep();
 }
 
 function startRound() {
@@ -2248,7 +2361,9 @@ function escapeHtml(value) {
 
 function resetGame() {
   state = null;
+  pendingSetup = null;
   els.startScreen.hidden = false;
+  els.profileScreen.hidden = true;
   els.gameScreen.hidden = true;
   els.finalScreen.hidden = true;
   els.resetButton.hidden = true;
@@ -2265,10 +2380,48 @@ els.startForm.addEventListener("submit", (event) => {
       .map((name) => name.trim())
       .filter(Boolean)
       .slice(0, cohortSize);
-    startGame(names, cohortSize, mode);
+    openProfileSetup(names, cohortSize, mode);
   } else {
-    startGame(String(data.get("playerName")), cohortSize, mode);
+    openProfileSetup([String(data.get("playerName"))], cohortSize, mode);
   }
+});
+els.profileForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const data = new FormData(els.profileForm);
+  pendingSetup.humanBackgrounds[pendingSetup.currentIndex] = selectedStartingBackground(data);
+  if (pendingSetup.currentIndex < pendingSetup.names.length - 1) {
+    pendingSetup.currentIndex += 1;
+    renderProfileStep();
+    return;
+  }
+  const setup = pendingSetup;
+  pendingSetup = null;
+  startGame(setup.names, setup.cohortSize, setup.mode, setup.humanBackgrounds);
+});
+for (const option of [els.randomStart, els.averageStart, els.customStart]) {
+  option.addEventListener("change", () => {
+    els.profileBuilder.hidden = !els.customStart.checked;
+  });
+}
+for (const [input, output] of [
+  [els.profileEconomic, els.profileEconomicValue],
+  [els.profileHealth, els.profileHealthValue],
+  [els.profileSocial, els.profileSocialValue],
+  [els.profileWellbeing, els.profileWellbeingValue],
+]) {
+  input.addEventListener("input", () => {
+    output.textContent = input.value;
+  });
+}
+els.profileBackButton.addEventListener("click", () => {
+  if (pendingSetup.currentIndex > 0) {
+    pendingSetup.currentIndex -= 1;
+    renderProfileStep();
+    return;
+  }
+  pendingSetup = null;
+  els.profileScreen.hidden = true;
+  els.startScreen.hidden = false;
 });
 els.gameMode.addEventListener("change", () => {
   const multiplayer = els.gameMode.value === "multiplayer";

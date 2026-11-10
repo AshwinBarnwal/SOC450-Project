@@ -65,6 +65,85 @@
         </form>
       </section>
 
+      <section id="profile-screen" class="profile-screen" aria-labelledby="profile-title" hidden>
+        <header class="profile-heading">
+          <div>
+            <p class="section-number">STARTING POSITION</p>
+            <h2 id="profile-title">How does <span id="profile-player-name">your life</span> begin?</h2>
+          </div>
+          <p id="profile-progress" class="profile-progress"></p>
+        </header>
+
+        <form id="profile-form" class="profile-form">
+          <fieldset class="start-options">
+            <legend>Choose how the starting position is set</legend>
+
+            <label class="start-option">
+              <input type="radio" name="startType" value="random" checked />
+              <span>
+                <strong>Random beginning</strong>
+                <small>Draw one of the existing unequal household backgrounds. You see the result when the game begins.</small>
+              </span>
+            </label>
+
+            <label class="start-option">
+              <input type="radio" name="startType" value="average" />
+              <span>
+                <strong>Average beginning</strong>
+                <small>Begin with 10 points in every area. This removes birth advantage or disadvantage for this player.</small>
+              </span>
+            </label>
+
+            <label class="start-option">
+              <input type="radio" name="startType" value="profile" />
+              <span>
+                <strong>Profile my own start</strong>
+                <small>Describe a plausible starting position across the four resources. Values remain hidden from other players until play begins.</small>
+              </span>
+            </label>
+          </fieldset>
+
+          <div id="profile-builder" class="profile-builder" hidden>
+            <div class="profile-builder-copy">
+              <p class="section-number">YOUR PROFILE</p>
+              <h3>Set the conditions entering adulthood</h3>
+              <p>Use whole numbers from 4 to 16. This is deliberately self-reported, so choosing an easy start is allowed.</p>
+            </div>
+
+            <div class="profile-meters">
+              <label for="profile-economic">
+                <span>Economic security</span>
+                <output id="profile-economic-value" for="profile-economic">10</output>
+              </label>
+              <input id="profile-economic" name="profileEconomic" type="range" min="4" max="16" step="1" value="10" />
+
+              <label for="profile-health">
+                <span>Health</span>
+                <output id="profile-health-value" for="profile-health">10</output>
+              </label>
+              <input id="profile-health" name="profileHealth" type="range" min="4" max="16" step="1" value="10" />
+
+              <label for="profile-social">
+                <span>Social connection</span>
+                <output id="profile-social-value" for="profile-social">10</output>
+              </label>
+              <input id="profile-social" name="profileSocial" type="range" min="4" max="16" step="1" value="10" />
+
+              <label for="profile-wellbeing">
+                <span>Wellbeing</span>
+                <output id="profile-wellbeing-value" for="profile-wellbeing">10</output>
+              </label>
+              <input id="profile-wellbeing" name="profileWellbeing" type="range" min="4" max="16" step="1" value="10" />
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button id="profile-back-button" class="text-button" type="button">Back</button>
+            <button id="profile-submit-button" class="primary-button" type="submit">Use this beginning</button>
+          </div>
+        </form>
+      </section>
+
       <section id="game-screen" hidden>
         <nav class="decade-track" aria-label="Life-course progress">
           <ol id="round-track"></ol>
