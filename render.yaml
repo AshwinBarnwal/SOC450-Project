@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: soc450-compounding-advantage
+    runtime: static
+    buildCommand: mkdir -p public && cp index.html app.js styles.css public/
+    staticPublishPath: ./public

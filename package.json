@@ -1,0 +1,11 @@
+{
+  "name": "soc450-compounding-advantage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A life-course inequality game and simulation for SOC450.",
+  "scripts": {
+    "test": "node tests/smoke.js",
+    "test:balance": "node tests/balance.js",
+    "simulate": "node analysis/monte_carlo.js 10000"
+  }
+}

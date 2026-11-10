@@ -1,0 +1,17 @@
+# Generated analysis
+output/
+
+# Render build output
+public/
+
+# Local environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+node_modules/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
